@@ -16,8 +16,9 @@ class PromoCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final periodoComDesconto = suite.periodos.firstWhere((p) => p.desconto != null);
-    final desconto = periodoComDesconto.desconto;
+    final desconto = suite.periodos.firstWhere((periodo) => periodo.desconto != null).desconto?.desconto;
+
+    final preco = suite.periodos.firstWhere((periodo) => periodo.desconto != null).valor;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
@@ -37,8 +38,8 @@ class PromoCardWidget extends StatelessWidget {
                 ),
                 child: Image.network(
                   suite.fotos.first,
-                  width: 150,
-                  height: 150,
+                  width: 170,
+                  height: 180,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -48,10 +49,9 @@ class PromoCardWidget extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Column(
-                  spacing: 4,
-                  crossAxisAlignment: CrossAxisAlignment.start, // Alinhamento à esquerda
+                  spacing: 2,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Nome do motel com ícone de foguinho
                     Row(
                       children: [
                         const Icon(
@@ -59,27 +59,30 @@ class PromoCardWidget extends StatelessWidget {
                           color: Colors.orange,
                           size: 20,
                         ),
-                        Text(
-                          motel.fantasia,
-                          style: const TextStyle(
-                            color: Color(0xFF515151),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              motel.fantasia,
+                              style: const TextStyle(
+                                color: Color(0xFF515151),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              utf8.decode(motel.bairro.runes.toList()),
+                              style: const TextStyle(
+                                color: Color(0xFF626365),
+                                fontSize: 12,
+                              ),
+                              softWrap: true,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-
-                    Text(
-                      utf8.decode(motel.bairro.runes.toList()),
-                      style: const TextStyle(
-                        color: Color(0xFF626365),
-                        fontSize: 14,
-                      ),
-                      softWrap: true,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
                     if (desconto != null)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -91,25 +94,25 @@ class PromoCardWidget extends StatelessWidget {
                               color: const Color(0xFFF8F9FB), // Fundo levemente mais escuro
                               borderRadius: BorderRadius.circular(5),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Text(
-                                  "${desconto.desconto.toStringAsFixed(0)}% de desconto",
+                                  "${desconto.toStringAsFixed(0)}% de desconto",
                                   style: const TextStyle(
                                     color: Color(0xFF5D5E60),
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 18,
+                                    fontSize: 16,
                                     decoration: TextDecoration.underline, // Adiciona sublinhado
                                   ),
                                 ),
                                 Divider(color: Colors.white),
                                 Text(
-                                  "a partir de R\$ ${periodoComDesconto.valor.toStringAsFixed(2)}",
+                                  "a partir de R\$ ${preco.toStringAsFixed(2)}",
                                   style: const TextStyle(
                                     color: Color(0xFF515151),
-                                    fontSize: 14,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ],
