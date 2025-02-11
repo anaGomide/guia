@@ -8,7 +8,7 @@ import '../widgets/motel_card_widget.dart';
 import '../widgets/promo_card_widget.dart';
 
 class MotelListScreen extends StatefulWidget {
-  const MotelListScreen({Key? key}) : super(key: key);
+  const MotelListScreen({super.key});
 
   @override
   State<MotelListScreen> createState() => _MotelListScreenState();
@@ -39,21 +39,20 @@ class _MotelListScreenState extends State<MotelListScreen> {
   }
 
   Future<void> _loadRequiredData() async {
-    setState(() => _isLoading = true); // Mostra o loading antes de carregar
+    setState(() => _isLoading = true);
 
     try {
       final provider = Provider.of<MotelProvider>(context, listen: false);
-      await provider.loadMoteis(); // Carrega os dados do provider
+      await provider.loadMoteis();
 
       setState(() {
         suitesComDesconto = provider.getTodasSuitesComDesconto();
         moteisFiltrados = provider.moteis;
         moteisComPromocoes = provider.moteisComPromocoes;
-        _isLoading = false; // Concluiu o carregamento, remove o loading
+        _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false); // Se falhar, também remove o loading
-      print("Erro ao carregar motéis: $e"); // Debugging
+      setState(() => _isLoading = false);
     }
   }
 
@@ -61,141 +60,209 @@ class _MotelListScreenState extends State<MotelListScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.white,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('Filtros', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 16),
-                    // Faixa de preço
-                    const Text('Faixa de preço', style: TextStyle(fontSize: 16)),
-                    RangeSlider(
-                      values: priceRange,
-                      min: 30,
-                      max: 2030,
-                      divisions: 200,
-                      labels: RangeLabels(
-                        'R\$ ${priceRange.start.round()}',
-                        'R\$ ${priceRange.end.round()}',
+            bool isAnyFilterSelected = selectedPeriods.isNotEmpty || selectedItems.isNotEmpty || onlyDiscounted || onlyAvailable;
+
+            return Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 60.0), // Espaço para o botão fixo
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        spacing: 16, // Define espaçamento entre os elementos
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Cabeçalho do modal
+                          Row(
+                            spacing: 100,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.keyboard_arrow_down, size: 32),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                              const Text(
+                                'Filtros',
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+
+                          // Faixa de Preço
+                          buildFilterContainer(
+                            title: "Faixa de preço",
+                            child: Column(
+                              spacing: 8,
+                              children: [
+                                RangeSlider(
+                                  values: priceRange,
+                                  min: 30,
+                                  max: 2030,
+                                  divisions: 200,
+                                  labels: RangeLabels(
+                                    'R\$ ${priceRange.start.round()}',
+                                    'R\$ ${priceRange.end.round()}',
+                                  ),
+                                  onChanged: (values) {
+                                    setModalState(() {
+                                      priceRange = values;
+                                    });
+                                  },
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text('R\$ ${priceRange.start.round()}'),
+                                    Text('R\$ ${priceRange.end.round()}'),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Períodos
+                          buildFilterContainer(
+                            title: "Períodos",
+                            child: Wrap(
+                              spacing: 8.0,
+                              runSpacing: 8.0,
+                              children: [
+                                for (var period in [
+                                  "1 hora",
+                                  "2 horas",
+                                  "3 horas",
+                                  "4 horas",
+                                  "5 horas",
+                                  "6 horas",
+                                  "7 horas",
+                                  "8 horas",
+                                  "9 horas",
+                                  "10 horas",
+                                  "11 horas",
+                                  "12 horas",
+                                  "perdia",
+                                  "pernoite"
+                                ])
+                                  GestureDetector(
+                                    onTap: () {
+                                      setModalState(() {
+                                        if (selectedPeriods.contains(period)) {
+                                          selectedPeriods.remove(period);
+                                        } else {
+                                          selectedPeriods.add(period);
+                                        }
+                                      });
+                                    },
+                                    child: buildSelectableItem(
+                                      text: period,
+                                      isSelected: selectedPeriods.contains(period),
+                                      context: context,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+
+                          // Opções de Desconto e Disponibilidade
+                          buildFilterContainer(
+                            title: "Opções",
+                            child: Column(
+                              spacing: 8,
+                              children: [
+                                SwitchListTile(
+                                  title: const Text('Somente suítes com desconto', style: TextStyle(color: Color(0xFF515151))),
+                                  value: onlyDiscounted,
+                                  onChanged: (value) {
+                                    setModalState(() => onlyDiscounted = value);
+                                  },
+                                ),
+                                SwitchListTile(
+                                  title: const Text('Somente suítes disponíveis', style: TextStyle(color: Color(0xFF515151))),
+                                  value: onlyAvailable,
+                                  onChanged: (value) {
+                                    setModalState(() => onlyAvailable = value);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Itens da Suíte
+                          buildFilterContainer(
+                            title: "Itens da suíte",
+                            child: Wrap(
+                              spacing: 8.0,
+                              runSpacing: 8.0,
+                              children: [
+                                for (var item in [
+                                  "hidro",
+                                  "piscina",
+                                  "sauna",
+                                  "ofurô",
+                                  "decoração erótica",
+                                  "decoração temática",
+                                  "cadeira erótica",
+                                  "pista de dança",
+                                  "garagem privativa",
+                                  "frigobar",
+                                  "internet wi-fi",
+                                  "suíte para festas",
+                                  "suíte com acessibilidade"
+                                ])
+                                  GestureDetector(
+                                    onTap: () {
+                                      setModalState(() {
+                                        if (selectedItems.contains(item)) {
+                                          selectedItems.remove(item);
+                                        } else {
+                                          selectedItems.add(item);
+                                        }
+                                      });
+                                    },
+                                    child: buildSelectableItem(
+                                      text: item,
+                                      isSelected: selectedItems.contains(item),
+                                      context: context,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      onChanged: (values) {
-                        setModalState(() => priceRange = values);
-                      },
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('R\$ ${priceRange.start.round()}'),
-                        Text('R\$ ${priceRange.end.round()}'),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Períodos
-                    const Text('Períodos', style: TextStyle(fontSize: 16)),
-                    Wrap(
-                      spacing: 8.0,
-                      runSpacing: 8.0,
-                      children: [
-                        for (var period in [
-                          "1 hora",
-                          "2 horas",
-                          "3 horas",
-                          "4 horas",
-                          "5 horas",
-                          "6 horas",
-                          "7 horas",
-                          "8 horas",
-                          "9 horas",
-                          "10 horas",
-                          "11 horas",
-                          "12 horas",
-                          "perdia",
-                          "pernoite"
-                        ])
-                          FilterChip(
-                            label: Text(period),
-                            selected: selectedPeriods.contains(period),
-                            onSelected: (bool selected) {
-                              setModalState(() {
-                                if (selected) {
-                                  selectedPeriods.add(period);
-                                } else {
-                                  selectedPeriods.remove(period);
-                                }
-                              });
-                            },
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Opções de desconto e disponibilidade
-                    SwitchListTile(
-                      title: const Text('Somente suítes com desconto'),
-                      value: onlyDiscounted,
-                      onChanged: (value) {
-                        setModalState(() => onlyDiscounted = value);
-                      },
-                    ),
-                    SwitchListTile(
-                      title: const Text('Somente suítes disponíveis'),
-                      value: onlyAvailable,
-                      onChanged: (value) {
-                        setModalState(() => onlyAvailable = value);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    // Itens da suíte
-                    const Text('Itens da suíte', style: TextStyle(fontSize: 16)),
-                    Wrap(
-                      spacing: 8.0,
-                      runSpacing: 8.0,
-                      children: [
-                        for (var item in [
-                          "hidro",
-                          "piscina",
-                          "sauna",
-                          "ofurô",
-                          "decoração erótica",
-                          "decoração temática",
-                          "cadeira erótica",
-                          "pista de dança",
-                          "garagem privativa",
-                          "frigobar",
-                          "internet wi-fi",
-                          "suíte para festas",
-                          "suíte com acessibilidade"
-                        ])
-                          FilterChip(
-                            label: Text(item),
-                            selected: selectedItems.contains(item),
-                            onSelected: (bool selected) {
-                              setModalState(() {
-                                if (selected) {
-                                  selectedItems.add(item);
-                                } else {
-                                  selectedItems.remove(item);
-                                }
-                              });
-                            },
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        applyFilters();
-                      },
-                      child: const Text('Aplicar Filtros'),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+
+                // Botão fixo no rodapé
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: isAnyFilterSelected
+                        ? () {
+                            Navigator.pop(context);
+                            applyFilters();
+                          }
+                        : null,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      color: isAnyFilterSelected ? Theme.of(context).primaryColor : Colors.grey.shade500,
+                      alignment: Alignment.center,
+                      child: const Text(
+                        'VERIFICAR DISPONIBILIDADE',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             );
           },
         );
@@ -203,10 +270,60 @@ class _MotelListScreenState extends State<MotelListScreen> {
     );
   }
 
+// Widget para criar containers brancos com título
+  Widget buildFilterContainer({required String title, required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        spacing: 8,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          child,
+        ],
+      ),
+    );
+  }
+
+// Widget para botões de seleção personalizados
+  Widget buildSelectableItem({required String text, required bool isSelected, required BuildContext context}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isSelected ? Theme.of(context).primaryColor : Colors.white,
+        border: Border.all(
+          color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade400,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 14,
+          color: isSelected ? Colors.white : const Color(0xFF515151),
+        ),
+      ),
+    );
+  }
+
   void applyFilters() {
     final provider = Provider.of<MotelProvider>(context, listen: false);
 
-    print("Chamando applyFilters...");
     provider.filterMoteis(
       priceRange: priceRange,
       periods: selectedPeriods,
@@ -253,7 +370,7 @@ class _MotelListScreenState extends State<MotelListScreen> {
                         child: Column(
                           children: [
                             SizedBox(
-                              height: 200, // Altura do carrossel
+                              height: 200,
                               child: PageView.builder(
                                 controller: _promoPageController,
                                 itemCount: suitesComDesconto.length,
@@ -306,7 +423,7 @@ class _MotelListScreenState extends State<MotelListScreen> {
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: const Color(0xFFCCCCCC)), // Borda cinza
+                                      border: Border.all(color: const Color(0xFFCCCCCC)),
                                     ),
                                     child: Row(
                                       spacing: 4,
@@ -319,7 +436,6 @@ class _MotelListScreenState extends State<MotelListScreen> {
                                       ],
                                     ),
                                   ),
-                                  // Bolinha de notificação com o contador
                                   if (getTotalFiltersCount() > 0)
                                     Positioned(
                                       left: 0,
@@ -462,12 +578,12 @@ class _MotelListScreenState extends State<MotelListScreen> {
                                     moteisFiltrados = provider.moteis;
                                   });
                                 },
-                                child: const Text(
+                                child: Text(
                                   'tentar novamente',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.red,
+                                    color: Theme.of(context).primaryColor,
                                     decoration: TextDecoration.underline,
                                   ),
                                 ),
@@ -482,9 +598,8 @@ class _MotelListScreenState extends State<MotelListScreen> {
                           final motel = moteisFiltrados[index];
                           return MotelCardWidget(
                             motel: motel,
-                            //suite: motel.suites.isNotEmpty ? motel.suites[0] : null,
                             onFavoritePressed: () {
-                              print('Favoritou ${motel.fantasia}');
+                              // print('Favoritou ${motel.fantasia}');
                             },
                           );
                         },

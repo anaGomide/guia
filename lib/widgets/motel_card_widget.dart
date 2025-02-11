@@ -1,18 +1,30 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 
 import '../models/motel_model.dart';
 
-class MotelCardWidget extends StatelessWidget {
+class MotelCardWidget extends StatefulWidget {
   final Motel motel;
   final VoidCallback onFavoritePressed;
 
   const MotelCardWidget({
-    Key? key,
+    super.key,
     required this.motel,
     required this.onFavoritePressed,
-  }) : super(key: key);
+  });
+
+  @override
+  _MotelCardWidgetState createState() => _MotelCardWidgetState();
+}
+
+class _MotelCardWidgetState extends State<MotelCardWidget> {
+  bool isFavorited = false;
+
+  void toggleFavorite() {
+    setState(() {
+      isFavorited = !isFavorited;
+    });
+    widget.onFavoritePressed();
+  }
 
   void _showDetailsModal(BuildContext context, Suite suite) {
     showModalBottomSheet(
@@ -28,7 +40,8 @@ class MotelCardWidget extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            spacing: 16,
+            mainAxisSize: MainAxisSize.max,
             children: [
               Align(
                 alignment: Alignment.topLeft,
@@ -37,72 +50,111 @@ class MotelCardWidget extends StatelessWidget {
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
-              const SizedBox(height: 8),
               Text(
                 suite.nome,
                 style: const TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.bold,
                   color: Color(0xFF333333),
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
-              // Principais itens
-              const Divider(),
-              const Text(
-                "principais itens",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF666666),
-                ),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Divider(
+                      color: Colors.grey.shade400,
+                      thickness: 1,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text(
+                      "principais itens",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF666666),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Divider(
+                      color: Colors.grey.shade400,
+                      thickness: 1,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
               Wrap(
                 spacing: 16.0,
                 runSpacing: 16.0,
-                alignment: WrapAlignment.center,
+                alignment: WrapAlignment.start,
                 children: suite.categoriaItens.map((categoria) {
-                  return Column(
-                    spacing: 4,
-                    children: [
-                      Image.network(
-                        categoria.icone,
-                        width: 30,
-                        height: 30,
-                      ),
-                      Text(
-                        categoria.nome,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF666666),
+                  return SizedBox(
+                    width: 150,
+                    child: Column(
+                      children: [
+                        Row(
+                          spacing: 8,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Image.network(
+                              categoria.icone,
+                              width: 30,
+                              height: 30,
+                            ),
+                            Flexible(
+                              child: Text(
+                                categoria.nome,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF666666),
+                                ),
+                                softWrap: true,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 16),
-              const Divider(),
-              const Text(
-                "tem também",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF666666),
-                ),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Divider(
+                      color: Colors.grey.shade400, // Cor da linha
+                      thickness: 1, // Espessura da linha
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0), // Espaço entre a linha e o texto
+                    child: Text(
+                      "tem também",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF666666),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Divider(
+                      color: Colors.grey.shade400,
+                      thickness: 1,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
               Text(
                 suite.itens.map((item) => item.nome).join(", "),
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 16,
                   color: Color(0xFF666666),
                 ),
-                textAlign: TextAlign.center,
+                textAlign: TextAlign.left,
               ),
-              const SizedBox(height: 16),
             ],
           ),
         );
@@ -112,7 +164,7 @@ class MotelCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const double cardWidth = 300;
+    const double cardWidth = 350;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -123,7 +175,7 @@ class MotelCardWidget extends StatelessWidget {
             children: [
               ClipOval(
                 child: Image.network(
-                  motel.logo,
+                  widget.motel.logo,
                   width: 25,
                   height: 25,
                   fit: BoxFit.cover,
@@ -135,14 +187,14 @@ class MotelCardWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      motel.fantasia,
+                      widget.motel.fantasia,
                       style: const TextStyle(
                         fontSize: 20,
                         color: Color(0xFF333333),
                       ),
                     ),
                     Text(
-                      utf8.decode(motel.bairro.runes.toList()),
+                      widget.motel.bairro,
                       style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF666666),
@@ -153,10 +205,10 @@ class MotelCardWidget extends StatelessWidget {
               ),
               IconButton(
                 icon: Icon(
-                  motel.qtdFavoritos > 0 ? Icons.favorite : Icons.favorite_border,
-                  color: motel.qtdFavoritos > 0 ? Colors.red : Colors.grey,
+                  isFavorited ? Icons.favorite : Icons.favorite_border,
+                  color: isFavorited ? Colors.red : Colors.grey,
                 ),
-                onPressed: onFavoritePressed,
+                onPressed: toggleFavorite,
               ),
             ],
           ),
@@ -166,9 +218,9 @@ class MotelCardWidget extends StatelessWidget {
           width: double.infinity,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: motel.suites.length,
+            itemCount: widget.motel.suites.length,
             itemBuilder: (context, index) {
-              final suite = motel.suites[index];
+              final suite = widget.motel.suites[index];
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: SizedBox(
@@ -194,7 +246,7 @@ class MotelCardWidget extends StatelessWidget {
                                   child: Image.network(
                                     suite.fotos[0],
                                     height: 200,
-                                    width: 300,
+                                    width: cardWidth,
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -202,7 +254,7 @@ class MotelCardWidget extends StatelessWidget {
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Text(
-                                  utf8.decode(suite.nome.runes.toList()),
+                                  suite.nome,
                                   style: const TextStyle(
                                     fontSize: 18,
                                     color: Color(0xFF333333),

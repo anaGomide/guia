@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 
 import '../models/motel_model.dart';
@@ -71,7 +69,7 @@ class PromoCardWidget extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              utf8.decode(motel.bairro.runes.toList()),
+                              motel.bairro,
                               style: const TextStyle(
                                 color: Color(0xFF626365),
                                 fontSize: 12,
